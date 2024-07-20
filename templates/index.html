@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Garbage Classification System</title>
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f7f7f7;
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+        }
+        .header {
+            width: 100%;
+            background-color: #ffffff;
+            color: #333;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 20px;
+            border-radius: 12px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 20px;
+            flex: 1;
+        }
+        .video-container, .classification, .upload-container {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            background-color: #ffffff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .video-container:hover, .classification:hover, .upload-container:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        .video-container {
+            flex: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .video-container img {
+            width: 100%;
+            height: auto;
+            border: none;
+        }
+        .classification, .upload-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: #f9f9f9;
+        }
+        .classification h2, .upload-container h2 {
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+        }
+        .classification h2 .material-icons, .upload-container h2 .material-icons {
+            margin-right: 12px;
+            font-size: 28px;
+            color: #333;
+        }
+        .classification p, .upload-container p {
+            font-size: 18px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .classification .material-icons, .upload-container .material-icons {
+            margin-right: 12px;
+            color: #333; /* Darker color for better contrast */
+            font-size: 24px;
+        }
+        .colorful-text {
+            color: #007aff; /* Apple Blue */
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .video-container, .classification, .upload-container {
+                width: 100%;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Smart Garbage Classification System</h1>
+    </div>
+    <div class="container">
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" alt="Garbage Classification">
+        </div>
+        <div class="classification">
+            <h2><span class="material-icons">info</span>Latest Classification</h2>
+            <p id="class-label"><span class="material-icons">category</span>Class: <span class="colorful-text">Unknown</span></p>
+            <p id="group-label"><span class="material-icons">group</span>Group: <span class="colorful-text">Unknown</span></p>
+        </div>
+        <div class="upload-container">
+            <h2><span class="material-icons">upload</span>Upload an Image</h2>
+            <input type="file" id="imageUpload" accept="image/*">
+            <button id="uploadBtn">Upload and Predict</button>
+            <p id="upload-result"><span class="material-icons">category</span>Class: <span class="colorful-text">Unknown</span></p>
+            <p id="upload-group"><span class="material-icons">group</span>Group: <span class="colorful-text">Unknown</span></p>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const classLabel = document.getElementById("class-label");
+            const groupLabel = document.getElementById("group-label");
+
+            function fetchClassification() {
+                fetch('/latest_classification')
+                    .then(response => response.json())
+                    .then(data => {
+                        classLabel.querySelector(".colorful-text").textContent = data.class;
+                        groupLabel.querySelector(".colorful-text").textContent = data.group;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching latest classification:', error);
+                    });
+            }
+
+            fetchClassification();
+            setInterval(fetchClassification, 2000);
+        });
+
+        document.getElementById('uploadBtn').addEventListener('click', function () {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select an image file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('upload-result').querySelector('.colorful-text').textContent = data.class;
+                document.getElementById('upload-group').querySelector('.colorful-text').textContent = data.group;
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+            });
+        });
+    </script>
+</body>
+</html>
